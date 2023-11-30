@@ -1,4 +1,4 @@
-# Robust Learning via Variational Inference (RLVI)
+# Robust Learning using Variational Inference (RLVI)
 
 This code implements Adaptive Parameter-Free Robust Learning using Latent Bernoulli Variables.
 
