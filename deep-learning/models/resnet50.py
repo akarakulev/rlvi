@@ -136,6 +136,7 @@ def resnet50(num_classes, input_channel, pretrained=True, dropout_rate=0):
 		)
 		state_dict.pop('fc.weight', None)
 		state_dict.pop('fc.bias', None)
+		model.load_state_dict(state_dict, strict=False)
 		print("Loaded Imagenet pretrained model")
 
 	return model
