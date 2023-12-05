@@ -1,6 +1,6 @@
 # Robust Learning using Variational Inference (RLVI)
 
-This code implements Adaptive Parameter-Free Robust Learning using Latent Bernoulli Variables.
+This code implements RLVI – the method from the paper [Adaptive Parameter-Free Robust Learning using Latent Bernoulli Variables](https://arxiv.org/abs/2312.00585).
 
 ## Install dependencies
 ```
@@ -24,6 +24,8 @@ python3 main.py
 ```
 
 ### Deep learning
+PyTorch implementation of RLVI for robust training of neural networks.
+
 #### Synthetic noise (MNIST, CIFAR10, CIFAR100)
 Experiments with the datasets in which training data is corrupted with synthetic noise.
 There are three types of noise: `symmetric`, `asymmetric`, and `pairflip`. Noise rate from 0 to 1 needs to be specified.
