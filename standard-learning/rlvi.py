@@ -5,10 +5,8 @@ import utils
 
 
 def update_weights(residuals, tol=1e-3, maxiter=100):
-    '''Find Bernoulli probabilities using fixed-point iterations'''
-    # Pre-conditioning: shift and scale residuals for numerical stability
-    residuals -= np.min(residuals)
-    # To scale the loss range, we use a combination of the median and mean losses
+    '''Coordinate descent for Bernoulli probabilities'''
+    # Scale residuals under exponential function
     scale = 2 * np.sqrt(np.mean(residuals) * np.median(residuals))
     if scale > 1:
         residuals /= scale
@@ -22,8 +20,7 @@ def update_weights(residuals, tol=1e-3, maxiter=100):
         weights = np.copy(new_weights)
         if error < tol:
             break
-    # Scale found weights from [0; w_max] back to [0; 1]
-    # to account for pre-conditioning in the beginning
+    # Scale weights from [0; w_max] to [0; 1] for convinience
     new_weights = new_weights / np.max(new_weights)
     return new_weights
 
