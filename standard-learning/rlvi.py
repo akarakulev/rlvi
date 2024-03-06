@@ -20,7 +20,7 @@ def update_weights(residuals, tol=1e-3, maxiter=100):
         weights = np.copy(new_weights)
         if error < tol:
             break
-    # Scale weights from [0; w_max] to [0; 1] for convinience
+    # Scale weights from [0; w_max] to [0; 1]
     new_weights = new_weights / np.max(new_weights)
     return new_weights
 
