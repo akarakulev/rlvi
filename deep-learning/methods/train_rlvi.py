@@ -14,7 +14,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 @torch.no_grad()
 def update_sample_weights(residuals, weights, tol=1e-3, maxiter=40):
     """
-    Find Bernoulli probabilities using fixed-point iterations
+    Coordinate descent for Bernoulli probabilities
     
     Parameters
     ----------
@@ -24,9 +24,7 @@ def update_sample_weights(residuals, weights, tol=1e-3, maxiter=40):
             shape: len(train_loader) - Bernoulli probabilities pi: pi_i = proba (in [0; 1]) that sample i is non-corrupted.
             Updated inplace.
     """
-    # Pre-conditioning: shifting and scaling residuals -- to improve convergence
-    residuals.sub_(residuals.min())
-    # To scale the loss range, we use a combination of the median and mean losses
+    # Scale residuals under exponential function
     scale = 2 * torch.sqrt(residuals.mean() * residuals.median())
     if scale > 1:
         residuals.div_(scale)
@@ -41,7 +39,6 @@ def update_sample_weights(residuals, weights, tol=1e-3, maxiter=40):
         if error < tol:
             break
     # Scale found weights from [0; w_max] to [0; 1]
-    # to account for shifting and scaling the residuals in the beginning
     weights.div_(weights.max())
 
 
