@@ -52,10 +52,9 @@ def update_weights_rlvi(residuals, tol=1e-3, maxiter=100):
         ratio = avg_weight / (1 - avg_weight)
         new_weights = ratio * exp_res / (1 + ratio * exp_res)
         error = np.linalg.norm(new_weights - weights)
+        weights = np.copy(new_weights)
         if error < tol:
             break
-        weights = np.copy(new_weights)
-
     # Scale weights from [0; w_max] to [0; 1]
     # then, by the number of samples for `sklearn.partial_fit`
     new_weights /= np.max(new_weights)
