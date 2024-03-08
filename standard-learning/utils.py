@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.linalg import lstsq
 from sklearn.linear_model import LogisticRegression
 from sklearn.decomposition import PCA
 
@@ -35,14 +34,11 @@ def mm_log_reg(X, y, weights=None):
     X = np.hstack([np.ones((X.shape[0], 1)), X])
     theta0 = np.zeros(X.shape[1])
 
-    # Q = X.T @ np.diag(weights) @ X / 4.
-    X_tilde = 0.5 * X * np.sqrt(weights)[:, None]
-    Q = X_tilde.T @ X_tilde
+    Q = X.T @ np.diag(weights) @ X / 4.
     Q_inv = np.linalg.inv(Q)
 
     def grad(theta):
-        # return X.T @ np.diag(weights) @ (sigmoid(X @ theta) - y)
-        return X.T @ (weights * (sigmoid(X @ theta) - y))
+        return X.T @ np.diag(weights) @ (sigmoid(X @ theta) - y)
 
     def delta(theta):
         g = grad(theta)
@@ -58,12 +54,12 @@ def mm_log_reg(X, y, weights=None):
             theta_best = theta1
             break
 
-    losses = cross_entropy(X, theta_best, y)
-    return theta_best, losses
+    residuals = cross_entropy(X, theta_best, y)
+    return theta_best, residuals
 
 
 def sklearn_log_reg(X, y, weights=None, reg_coeff=1e2):
-    def get_losses(classifier):
+    def get_residuals(classifier):
         log_proba = classifier.predict_log_proba(X).T[0]
         return -y * log_proba - (1 - y) * log_proba
 
@@ -74,15 +70,15 @@ def sklearn_log_reg(X, y, weights=None, reg_coeff=1e2):
     clf.fit(X, y, sample_weight=weights)
     theta = np.hstack([clf.intercept_.flatten(), clf.coef_.flatten()])
 
-    # Compute loss on samples
-    losses = get_losses(clf)
-    return theta, losses
+    # Compute residuals
+    residuals = get_residuals(clf)
+    return theta, residuals
 
 
 def pca(samples, weights=None, theta=None):
-    def get_losses(princ_comp):
-        proj = samples @ princ_comp
-        return np.sum(samples**2, axis=1) - proj**2
+    def get_residuals(princ_comp):
+        proj = samples @ princ_comp.reshape((-1, 1))
+        return np.sum(samples**2, axis=1) - np.sum(proj**2, axis=1)
 
     if weights is None:
         weights = np.ones(len(samples))
@@ -93,21 +89,20 @@ def pca(samples, weights=None, theta=None):
         theta = pca_.components_[0]
         theta /= np.linalg.norm(theta)
 
-    # Compute loss on samples
-    losses = get_losses(theta)
-    return theta, losses
+    # Compute residuals
+    residuals = get_residuals(theta)
+    return theta, residuals
 
 
 def covariance(samples, weights=None, theta=None):
-    def get_losses(cov, weights):
-        mean = samples.T @ weights / np.sum(weights)
-        centered_samples = samples - mean
-        scaled_samples = lstsq(cov, centered_samples.T)[0]
-        residuals = np.diag(centered_samples @ scaled_samples)
+    def get_residuals(cov):
+        mean = np.mean(samples, axis=0)
+        scaled_samples = np.linalg.inv(cov) @ (samples - mean.T).T
+        res = np.diag((samples - mean.T) @ scaled_samples)
         (sign, logabsdet) = np.linalg.slogdet(cov)
         if sign <= 0:
             raise ValueError("Non PSD covariance matrix")
-        return 0.5 * (residuals + logabsdet) - 1
+        return res + logabsdet
 
     if weights is None:
         weights = np.ones(len(samples), 1) / len(samples)
@@ -118,6 +113,6 @@ def covariance(samples, weights=None, theta=None):
         weighted_cov = centered_samples.T @ np.diag(weights) @ centered_samples / np.sum(weights)
         theta = weighted_cov
 
-    # Compute loss on samples
-    losses = get_losses(theta, weights)
-    return theta, losses
+    # Compute residuals
+    residuals = get_residuals(theta)
+    return theta, residuals

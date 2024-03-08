@@ -9,9 +9,8 @@ from scipy.linalg import lstsq
 import utils
 
 
-def update_weights(losses, eps):
-    '''Find sample weights for Robust Risk Minimization'''
-    res = np.copy(losses)
+def update_weights(residuals, eps):
+    res = np.copy(residuals)
     t = -np.log((1 - eps) * res.shape[0])
     numeric_cutoff = 1e-16
     def objective(xi):
@@ -36,14 +35,14 @@ def update_weights(losses, eps):
 def mean(sample, eps, maxiter=100, tol=1e-3):
     weights = np.ones(sample.shape[0]) / sample.shape[0]
     theta = weights @ sample / np.sum(weights)
-    losses = np.linalg.norm(theta - sample, axis=1)**2
+    residuals = np.linalg.norm(theta - sample, axis=1)**2
 
     for _ in range(maxiter):
-        weights = update_weights(losses, eps)
+        weights = update_weights(residuals, eps)
 
         prev_theta = np.copy(theta)
         theta = weights @ sample / np.sum(weights)
-        losses = np.linalg.norm(theta - sample, axis=1)**2
+        residuals = np.linalg.norm(theta - sample, axis=1)**2
 
         discrepancy = np.linalg.norm(theta - prev_theta) / np.linalg.norm(prev_theta)
         if discrepancy <= tol:
@@ -54,17 +53,19 @@ def mean(sample, eps, maxiter=100, tol=1e-3):
 
 def linear_regression(X, y, eps, maxiter=100, tol=1e-3):
     weights = np.ones(X.shape[0]) / X.shape[0]
+    # theta = np.linalg.solve(X.T @ np.diag(weights) @ X, X.T @ np.diag(weights) @ y)
     w_sqrt = np.diag(np.sqrt(weights))
     theta = lstsq(w_sqrt @ X, w_sqrt @ y)[0]
-    losses = (y - X @ theta)**2
+    residuals = (y - X @ theta)**2
 
     for _ in range(maxiter):
-        weights = update_weights(losses, eps)
+        weights = update_weights(residuals, eps)
 
         prev_theta = np.copy(theta)
+        # theta = np.linalg.solve(X.T @ np.diag(weights) @ X, X.T @ np.diag(weights) @ y)
         w_sqrt = np.diag(np.sqrt(weights))
         theta = lstsq(w_sqrt @ X, w_sqrt @ y)[0]
-        losses = (y - X @ theta)**2
+        residuals = (y - X @ theta)**2
 
         discrepancy = np.linalg.norm(theta - prev_theta) / np.linalg.norm(prev_theta)
         if discrepancy <= tol:
@@ -75,14 +76,14 @@ def linear_regression(X, y, eps, maxiter=100, tol=1e-3):
 
 def logistic_regression(X, y, eps, maxiter=100, tol=1e-2):
     weights = np.ones(X.shape[0]) / X.shape[0]
-    # theta, losses = utils.sklearn_log_reg(X, y, weights)
-    theta, losses = utils.mm_log_reg(X, y, weights)
+    theta, residuals = utils.sklearn_log_reg(X, y, weights)
+    # theta, residuals = utils.mm_log_reg(X, y, weights)
     for _ in range(maxiter):
-        weights = update_weights(losses, eps)
+        weights = update_weights(residuals, eps)
 
         prev_theta = np.copy(theta)
-        # theta, losses = utils.sklearn_log_reg(X, y, weights)
-        theta, losses = utils.mm_log_reg(X, y, weights)
+        theta, residuals = utils.sklearn_log_reg(X, y, weights)
+        # theta, residuals = utils.mm_log_reg(X, y, weights)
 
         discrepancy = np.linalg.norm(theta - prev_theta) / np.linalg.norm(prev_theta)
         if discrepancy <= tol:
@@ -93,12 +94,12 @@ def logistic_regression(X, y, eps, maxiter=100, tol=1e-2):
 
 def pca(sample, eps, maxiter=100, tol=1e-2, theta_init=None):
     weights = np.ones(sample.shape[0]) / sample.shape[0]
-    theta, losses = utils.pca(sample, weights, theta_init)
+    theta, residuals = utils.pca(sample, weights, theta_init)
     for _ in range(maxiter):
-        weights = update_weights(losses, eps)
+        weights = update_weights(residuals, eps)
 
         prev_theta = np.copy(theta)
-        theta, losses = utils.pca(sample, weights)
+        theta, residuals = utils.pca(sample, weights)
 
         discrepancy = np.linalg.norm(theta - prev_theta) / np.linalg.norm(prev_theta)
         if discrepancy <= tol:
@@ -109,13 +110,13 @@ def pca(sample, eps, maxiter=100, tol=1e-2, theta_init=None):
 
 def covariance(sample, eps, maxiter=100, tol=1e-2):
     weights = np.ones(sample.shape[0]) / sample.shape[0]
-    theta, losses = utils.covariance(sample, weights)
+    theta, residuals = utils.covariance(sample, weights)
 
     for _ in range(maxiter):
-        weights = update_weights(losses, eps)
+        weights = update_weights(residuals, eps)
 
         prev_theta = np.copy(theta)
-        theta, losses = utils.covariance(sample, weights)
+        theta, residuals = utils.covariance(sample, weights)
 
         discrepancy = np.linalg.norm(theta - prev_theta, ord='fro') / np.linalg.norm(prev_theta, ord='fro')
         if discrepancy <= tol:
@@ -126,14 +127,14 @@ def covariance(sample, eps, maxiter=100, tol=1e-2):
 
 def clf_breast_cancer(X, y, eps, maxiter=100, tol=1e-2):
     weights = np.ones(X.shape[0]) / X.shape[0]
-    # theta, losses = utils.sklearn_log_reg(X, y, weights, reg_coeff=100)
-    theta, losses = utils.mm_log_reg(X, y, weights)
+    # theta, residuals = utils.sklearn_log_reg(X, y, weights, reg_coeff=100)
+    theta, residuals = utils.mm_log_reg(X, y, weights)
     for _ in range(maxiter):
-        weights = update_weights(losses, eps)
+        weights = update_weights(residuals, eps)
 
         prev_theta = np.copy(theta)
-        # theta, losses = utils.sklearn_log_reg(X, y, weights, reg_coeff=100)
-        theta, losses = utils.mm_log_reg(X, y, weights)
+        # theta, residuals = utils.sklearn_log_reg(X, y, weights, reg_coeff=100)
+        theta, residuals = utils.mm_log_reg(X, y, weights)
 
         discrepancy = np.linalg.norm(theta - prev_theta) / np.linalg.norm(weights)
         if discrepancy <= tol:

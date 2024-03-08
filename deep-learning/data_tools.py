@@ -5,7 +5,6 @@ import codecs
 
 import numpy as np
 from numpy.testing import assert_array_almost_equal
-from scipy import stats
 
 import torch
 import torch.nn.functional as F
@@ -399,33 +398,6 @@ def dataset_split(train_images, train_labels,
                                                                                                 random_state=random_seed,
                                                                                                 nb_classes=num_classes)
 
-    if noise_type == 'instance' and dataset == 'mnist':
-        noisy_labels = get_instance_noisy_label(noise_rate, 
-                                                images=train_images,
-                                                labels=train_labels,
-                                                num_classes=10, 
-                                                feature_size=784, 
-                                                norm_std=0.1, 
-                                                seed=random_seed)
-    
-    if noise_type == 'instance' and dataset == 'cifar10':
-        noisy_labels = get_instance_noisy_label(noise_rate, 
-                                                images=train_images,
-                                                labels=train_labels,
-                                                num_classes=10, 
-                                                feature_size=3072, 
-                                                norm_std=0.1, 
-                                                seed=random_seed)
-        
-    if noise_type == 'instance' and dataset == 'cifar100':
-        noisy_labels = get_instance_noisy_label(noise_rate, 
-                                                images=train_images,
-                                                labels=train_labels,
-                                                num_classes=100, 
-                                                feature_size=3072, 
-                                                norm_std=0.1, 
-                                                seedcle=random_seed)
-
     noisy_labels = noisy_labels.squeeze()
     num_samples = int(noisy_labels.shape[0])
     np.random.seed(random_seed)
@@ -460,44 +432,3 @@ def transform_target(label):
     label = np.array(label)
     target = torch.from_numpy(label).long()
     return target
-
-
-def get_instance_noisy_label(noise_rate, images, labels, num_classes, feature_size, norm_std, seed):
-    """
-    images: mnist, cifar10, cifar100
-    label_num: class number
-    feature_size: the size of input images (e.g. 28*28)
-    norm_std: default 0.1
-    """
-
-    label_num = num_classes
-    np.random.seed(int(seed))
-    torch.manual_seed(int(seed))
-    torch.cuda.manual_seed(int(seed))
-
-    P = []
-    flip_distribution = stats.truncnorm((0 - noise_rate) / norm_std, (1 - noise_rate) / norm_std, loc=noise_rate, scale=norm_std)
-    # flip_distribution = stats.beta(a=0.01, b=(0.01 / n) - 0.01, loc=0, scale=1)
-    flip_rate = flip_distribution.rvs(labels.shape[0])
-
-    images = torch.Tensor(images).to(torch.float)
-    if not torch.is_tensor(labels):
-        labels = torch.FloatTensor(labels)
-    labels = labels.to(DEVICE)
-
-    W = np.random.randn(label_num, feature_size, label_num)
-    W = torch.FloatTensor(W).to(DEVICE)
-
-    for i, (x, y) in enumerate(zip(images, labels)):
-        x = x.to(DEVICE)
-        y = int(y)
-        A = x.view(1, -1).mm(W[y]).squeeze(0)
-        A[y] = -np.inf
-        A = flip_rate[i] * F.softmax(A, dim=0)
-        A[y] += 1 - flip_rate[i]
-        P.append(A)
-    P = torch.stack(P, 0).cpu().numpy()
-
-    l = [i for i in range(label_num)]
-    new_label = [np.random.choice(l, p=P[i]) for i in range(labels.shape[0])]
-    return np.array(new_label)
