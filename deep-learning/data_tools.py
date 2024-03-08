@@ -222,6 +222,7 @@ def noisify_trid(y_train, noise, random_state=1, nb_classes=10):
     return y_train, actual_noise, P
 
 
+
 def noisify_multiclass_asymmetric_mnist(y_train, noise, random_state=None, nb_classes=10):
     """mistakes:
         flip in the symmetric way
@@ -397,6 +398,7 @@ def dataset_split(train_images, train_labels,
                                                                                                 noise=noise_rate,
                                                                                                 random_state=random_seed,
                                                                                                 nb_classes=num_classes)
+
     if noise_type == 'instance' and dataset == 'mnist':
         noisy_labels = get_instance_noisy_label(noise_rate, 
                                                 images=train_images,
@@ -405,7 +407,7 @@ def dataset_split(train_images, train_labels,
                                                 feature_size=784, 
                                                 norm_std=0.1, 
                                                 seed=random_seed)
-
+    
     if noise_type == 'instance' and dataset == 'cifar10':
         noisy_labels = get_instance_noisy_label(noise_rate, 
                                                 images=train_images,
@@ -414,7 +416,7 @@ def dataset_split(train_images, train_labels,
                                                 feature_size=3072, 
                                                 norm_std=0.1, 
                                                 seed=random_seed)
-
+        
     if noise_type == 'instance' and dataset == 'cifar100':
         noisy_labels = get_instance_noisy_label(noise_rate, 
                                                 images=train_images,
