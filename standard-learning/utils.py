@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.linalg import lstsq
 from sklearn.linear_model import LogisticRegression
 from sklearn.decomposition import PCA
 
@@ -96,10 +97,14 @@ def pca(samples, weights=None, theta=None):
 
 def covariance(samples, weights=None, theta=None):
     def get_residuals(cov):
-        mean = np.mean(samples, axis=0)
-        scaled_samples = np.linalg.inv(cov) @ (samples - mean.T).T
-        res = np.diag((samples - mean.T) @ scaled_samples)
-        return res + np.linalg.slogdet(cov)[1]
+        mean = samples.T @ weights / np.sum(weights)
+        centered_samples = samples - mean
+        scaled_samples = lstsq(cov, centered_samples.T)[0]
+        res = np.diag(centered_samples @ scaled_samples)
+        (sign, logabsdet) = np.linalg.slogdet(cov)
+        if sign <= 0:
+            raise ValueError("Non PSD covariance matrix")
+        return res + logabsdet
 
     if weights is None:
         weights = np.ones(len(samples), 1) / len(samples)
