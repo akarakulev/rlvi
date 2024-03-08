@@ -39,35 +39,27 @@ if not os.path.exists('plots'):
     os.makedirs('plots')
 
 
-def update_weights_rlvi(residuals, tol=1e-3, maxiter=100):
-    '''Coordinate descent for Bernoulli probabilities'''
-    # Scale residuals under exponential function
-    scale = 2 * np.sqrt(np.mean(residuals) * np.median(residuals))
-    if scale > 1:
-        residuals /= scale
-    exp_res = np.exp(-residuals)
-    weights = 0.95 * np.ones_like(residuals)
+def update_weights_rlvi(losses, tol=1e-3, maxiter=100):
+    '''Find Bernoulli probabilities with coordinate descent'''
+    exp_loss = np.exp(-losses)
+    weights = 0.5 * np.ones_like(losses)
     for _ in range(maxiter):
         avg_weight = np.mean(weights)
         ratio = avg_weight / (1 - avg_weight)
-        new_weights = ratio * exp_res / (1 + ratio * exp_res)
+        new_weights = ratio * exp_loss / (1 + ratio * exp_loss)
         error = np.linalg.norm(new_weights - weights)
-        weights = np.copy(new_weights)
         if error < tol:
             break
-    # Scale weights from [0; w_max] to [0; 1]
-    # then, by the number of samples for `sklearn.partial_fit`
-    new_weights /= np.max(new_weights)
-    new_weights /= len(new_weights)
+        weights = np.copy(new_weights)
+    new_weights /= np.max(new_weights) * len(new_weights)
     return new_weights
 
 
-def update_weights_rrm(residuals, eps):
-    '''Optimize for sample weights in robust risk minimization'''
-    res = np.copy(residuals)
+def update_weights_rrm(losses, eps):
+    '''Find sample weights for Robust Risk Minimization'''
+    res = np.copy(losses)
     t = -np.log((1 - eps) * res.shape[0])
     numeric_cutoff = 1e-16
-
     def objective(xi):
         phi = np.exp(-res * np.exp(-xi))
         phi[phi < numeric_cutoff] = numeric_cutoff
@@ -77,10 +69,12 @@ def update_weights_rrm(residuals, eps):
     opt_res = minimize_scalar(objective)
     opt_xi = opt_res['x']
     opt_alpha = np.exp(opt_xi)
+
     phi = np.exp(-res / opt_alpha)
     phi[phi < numeric_cutoff] = numeric_cutoff
     sum_phi = np.sum(phi)
     opt_beta_over_alpha = np.log(sum_phi) - 1
+
     opt_weights = np.exp(-res / opt_alpha) * np.exp(-opt_beta_over_alpha - 1)
     return opt_weights
 
