@@ -7,6 +7,7 @@ import utils
 def update_weights(residuals, tol=1e-3, maxiter=100):
     '''Coordinate descent for Bernoulli probabilities'''
     # Scale residuals under exponential function
+    residuals -= np.min(residuals)
     scale = 2 * np.sqrt(np.mean(residuals) * np.median(residuals))
     if scale > 1:
         residuals /= scale
