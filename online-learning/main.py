@@ -41,6 +41,7 @@ if not os.path.exists('plots'):
 
 def update_weights_rlvi(residuals, tol=1e-3, maxiter=100):
     '''Coordinate descent for Bernoulli probabilities'''
+    residuals -= np.min(residuals)
     # Scale residuals under exponential function
     scale = 2 * np.sqrt(np.mean(residuals) * np.median(residuals))
     if scale > 1:
