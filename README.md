@@ -7,11 +7,11 @@ Our method, called RLVI, enables robust maximization of the likelihood. The lear
 Please cite our paper if you find this approach useful in your work
 ```bibtex
 @inproceedings{karakulev2024adaptive,
-  title={Adaptive Robust Learning using Latent Bernoulli Variables},
-  author={Aleksandr Karakulev and Dave Zachariah and Prashant Singh},
-  booktitle={Forty-first International Conference on Machine Learning},
-  year={2024},
-  url={https://openreview.net/forum?id=v6eaD7Wekw}
+  title={Adaptive robust learning using latent Bernoulli variables},
+  author={Karakulev, Aleksandr and Zachariah, Dave and Singh, Prashant},
+  booktitle={Proceedings of the 41st International Conference on Machine Learning},
+  pages={23105--23122},
+  year={2024}
 }
 ```
 
